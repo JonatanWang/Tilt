@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Tilt_Z</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
+    <string name="exit">Exit</string>
+    <string name="accelo">Accelo</string>
+    <string name="magneto">Magneto</string>
+    <string name="gyro">Gyro</string>
+</resources>

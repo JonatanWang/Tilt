@@ -1,0 +1,142 @@
+    private void calculateOrientation(SensorEvent sensorEvent) {
+
+        if (accValues != null) {
+            // calculate the rotation of the device
+            // ref: http://developer.android.com/guide/topics/sensors/sensors_position.html
+            SensorManager.getOrientation(rotation, radValues);
+            // Apply filters
+            for(int i = 0; i < degreeValues.length; i ++) {
+                radValues[i] = filters[i].filter(radValues[i]);
+            }
+            // rad to degrees
+            for (int j = 0; j < radValues.length; j ++) {
+                degreeValues[j] = (float) Math.toDegrees(radValues[j]);
+            }
+            double grade = degreeValues[2];
+            /**
+            if (grade < 0) {
+                grade = grade + 360;
+            }
+             */
+            int shortValue = (int) Math.round(grade);
+            // Check if shaking
+            float x = accValues[0];
+            float y = accValues[1];
+            float z = accValues[2];
+            System.out.println("X Y Z: " + x + " " + y + " " + z);
+            shakingValidator = new ShakingValidator(0.0175F, x, y, z);
+            if (shakingValidator.isShaking()) {
+                if (shakingCounter == 0) {
+                    toggleStartTime = System.currentTimeMillis();
+                    System.out.println("Toggle Start Time: " + toggleStartTime);
+                }
+                shakingCounter ++;
+                System.out.println("Shaking Counter: " + shakingCounter);
+                long currentTime = System.currentTimeMillis();
+                long timeDiff = currentTime - toggleStartTime;
+                System.out.println("Time Diff: " + timeDiff);
+                if (shakingCounter > 4 && timeDiff >= 1000) {
+                    tiltInfo.togglePaintColor();
+                    shakingCounter = 0;
+                    toggleStartTime = 0;
+                }
+            } else if (shakingCounter > 0) {
+                shakingCounter --;
+                System.out.println("Shaking Counter: " + shakingCounter);
+            }
+            tiltInfo.setGrade(String.valueOf(shortValue));
+            tiltInfo.invalidate();
+        }
+    }
+
+
+public class ShakeValidator {
+
+    private float prevX, prevY, prevZ;
+    private float prevVector;
+    private float currentVector;
+    private float filterFactor;
+
+    public ShakeValidator() {}
+
+    public ShakeValidator(float filterFactor, float prevX, float prevY, float prevZ) {
+        this.filterFactor = filterFactor;
+        this.prevX = prevX;
+        this.prevY = prevY;
+        this.prevZ = prevZ;
+        this.prevVector = (float) Math.sqrt(prevX * prevX + prevY * prevY + prevZ * prevZ);
+        System.out.println("prevVector: " + prevVector);
+    }
+
+    public float getCurrentVector() {
+        currentVector = filterFactor * currentVector + (1.0F - filterFactor) * prevVector;
+        System.out.println("currentVector: " + currentVector);
+        return currentVector;
+    }
+
+    public boolean isShaking() {
+        return  (Math.abs(this.getCurrentVector() - prevVector) > 0.175F);
+    }
+}
+
+
+    protected void validate(long prevToggleTime, int shakeCounter, long shakeDuration) {
+
+        long timeDifference = System.currentTimeMillis() - prevToggleTime;
+        prevToggleTime = System.currentTimeMillis();
+
+        float x = filterX.filter(this.getSensorValueX());
+        float y = filterY.filter(this.getSensorValueY());
+        float z = filterZ.filter(this.getSensorValueZ());
+
+        float[] linearAccValues = new float[3];
+        linearAccValues[0] = this.getSensorValueX() - x;
+        linearAccValues[1] = this.getSensorValueY() - y;
+        linearAccValues[2] = this.getSensorValueZ() - z;
+
+        float realAcc = (float) Math.sqrt(Math.pow(linearAccValues[0], 2)
+                                + Math.pow(linearAccValues[1], 2)
+                                + Math.pow(linearAccValues[2], 2));
+
+        if (realAcc > THERESHOLD) {
+            setShakeDuration(shakeDuration + timeDifference);
+            setShakeCounter(shakeCounter + 1);
+            //shakeDuration += timeDifference;
+            //shakeCounter ++;
+        } else if (shakeCounter == 0) {
+            setShakeDuration(0);
+            //shakeDuration = 0;
+        } else {
+            setShakeCounter(0);
+            //shakeCounter = 0;
+        }
+
+        if (getShakeDuration() > 1000) {
+            setSkaking(true);
+        }
+    }
+        public void validate() {
+
+            float x = filterX.filter(this.getSensorValueX());
+            float y = filterY.filter(this.getSensorValueY());
+            float z = filterZ.filter(this.getSensorValueZ());
+
+            float[] linearAccValues = new float[3];
+            linearAccValues[0] = this.getSensorValueX() - x;
+            linearAccValues[1] = this.getSensorValueY() - y;
+            linearAccValues[2] = this.getSensorValueZ() - z;
+
+            float realAcc = (float) Math.sqrt(Math.pow(linearAccValues[0], 2)
+                    + Math.pow(linearAccValues[1], 2)
+                    + Math.pow(linearAccValues[2], 2));
+
+            setPrevX(x);
+            setPrevY(y);
+            setPrevZ(z);
+
+            if (realAcc > THERESHOLD) {
+                setShaking(true);
+            } else {
+                setShaking(false);
+            }
+        }
